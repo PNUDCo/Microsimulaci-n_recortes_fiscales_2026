@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Simulador Ajuste Fiscal — Colombia 2026-2027 · PNUD</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#FFFFFF;--s1:#F7F9FC;--s2:#EEF2F7;--s3:#E5EBF3;
+  --line:#DDE3EA;--line2:#C8D4DF;
+  --navy:#0E2841;--navy2:#1A3A5C;
+  --blue:#009EDB;--blue2:#007AB3;--bluebg:#E8F5FC;
+  --green:#196B24;--greenbg:#EEF7EF;--greendk:#0D4D18;
+  --red:#C0392B;--redbg:#FEF3F0;--reddk:#8B0000;
+  --amber:#D4770A;--amberbg:#FDF3E3;
+  --sky:#0F9ED5;--skybg:#E5F4FB;
+  --text:#0E2841;--t2:#3D5472;--t3:#6B8096;--t4:#9AAEC0;
+  --shadow:0 1px 4px rgba(14,40,65,.10),0 4px 16px rgba(14,40,65,.07);
+}
+html,body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;min-height:100vh}
+.mono{font-family:'IBM Plex Mono',monospace}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:var(--line2);border-radius:3px}
+
+/* ─ HEADER ──────────────────────────────────────── */
+.hdr{display:flex;justify-content:space-between;align-items:center;
+  padding:10px 22px;background:#FFFFFF;border-bottom:2px solid var(--blue);
+  box-shadow:0 2px 8px rgba(0,0,0,.06);gap:12px}
+.hdr-left{display:flex;align-items:center;gap:14px}
+
+.hdr-title h1{font-size:13.5px;font-weight:600;color:var(--navy);line-height:1.2}
+.hdr-title p{font-size:9px;color:var(--t3);font-family:'IBM Plex Mono',monospace;margin-top:1px}
+.hdr-right{display:flex;gap:6px;align-items:center;flex-wrap:wrap;flex-shrink:0}
+.badge{font-size:8.5px;padding:3px 9px;border-radius:12px;font-family:'IBM Plex Mono',monospace;
+  font-weight:500;white-space:nowrap;border:1px solid}
+.b-red{color:var(--red);border-color:var(--red);background:var(--redbg)}
+.b-amber{color:var(--amber);border-color:var(--amber);background:var(--amberbg)}
+.b-blue{color:var(--blue2);border-color:var(--blue);background:var(--bluebg)}
+.b-green{color:var(--green);border-color:var(--green);background:var(--greenbg)}
+
+/* ─ ALERT ─────────────────────────────────────── */
+.alert{background:var(--amberbg);border-bottom:1px solid #F0D09A;
+  padding:8px 22px;display:flex;justify-content:space-between;align-items:center;gap:16px}
+.alert-txt{font-size:10px;color:var(--navy);line-height:1.5}
+.alert-txt strong{color:var(--amber)}
+.alert-link{font-size:9.5px;color:var(--blue);cursor:pointer;border:1px solid var(--blue);
+  border-radius:10px;padding:3px 12px;font-family:'IBM Plex Mono',monospace;
+  background:#FFFFFF;white-space:nowrap}
+.alert-link:hover{background:var(--bluebg)}
+
+/* ─ LAYOUT ─────────────────────────────────────── */
+.shell{display:grid;grid-template-columns:285px 1fr;min-height:calc(100vh - 86px)}
+
+/* ─ SIDEBAR ─────────────────────────────────────── */
+.sidebar{background:var(--s1);border-right:1px solid var(--line);
+  padding:14px 14px;overflow-y:auto;max-height:calc(100vh - 86px)}
+
+/* Progress ring + meta */
+.meta-box{background:#FFFFFF;border:1.5px solid var(--blue);border-radius:8px;
+  padding:12px;margin-bottom:12px;box-shadow:var(--shadow)}
+.meta-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.meta-label{font-size:9px;font-weight:600;color:var(--blue);letter-spacing:.1em;
+  text-transform:uppercase;font-family:'IBM Plex Mono',monospace}
+.meta-val{font-size:24px;font-weight:600;font-family:'IBM Plex Mono',monospace;
+  color:var(--navy);line-height:1}
+.meta-sub{font-size:9px;color:var(--t3);margin-top:1px;font-family:'IBM Plex Mono',monospace}
+.ring-wrap{position:relative;width:80px;margin:6px auto 4px}
+.ring-pct{font-size:8.5px;font-family:'IBM Plex Mono',monospace;color:var(--t3);
+  text-align:center;margin-top:2px}
+/* Progress bar */
+.prog-track{width:100%;height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:6px 0 4px}
+.prog-fill{height:100%;border-radius:3px;transition:width .4s}
+.prog-labels{display:flex;justify-content:space-between;font-size:8px;
+  color:var(--t4);font-family:'IBM Plex Mono',monospace}
+
+/* Buttons */
+.btn-col{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.btn{width:100%;padding:7px;border-radius:5px;border:none;
+  font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:500;
+  cursor:pointer;letter-spacing:.04em;transition:.15s}
+.btn-primary{background:var(--blue);color:#FFFFFF;border:1px solid var(--blue2)}
+.btn-primary:hover{background:var(--blue2)}
+.btn-ghost{background:#FFFFFF;color:var(--t2);border:1px solid var(--line2)}
+.btn-ghost:hover{background:var(--s2)}
+
+/* Slider label */
+.sl-group{font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--t3);
+  font-family:'IBM Plex Mono',monospace;margin:10px 0 7px;padding-bottom:5px;
+  border-bottom:1px solid var(--line)}
+
+/* Sector row */
+.sec-row{margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.sec-row:last-child{border-bottom:none}
+.sec-hdr{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px}
+.sec-name{font-size:10.5px;font-weight:600;color:var(--navy)}
+.sec-cut{font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--amber)}
+.sec-budget{font-size:8px;color:var(--t3);margin-bottom:4px;font-family:'IBM Plex Mono',monospace}
+input[type=range]{width:100%;height:3px;-webkit-appearance:none;border-radius:2px;
+  outline:none;cursor:pointer;background:var(--line)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;
+  border-radius:50%;background:var(--amber);cursor:pointer;border:2px solid #FFF;
+  box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.sec-meta{font-size:8px;margin-top:3px;display:flex;justify-content:space-between;
+  color:var(--t3)}
+
+/* F/I mini bars */
+.fi-bars{display:flex;height:4px;border-radius:2px;overflow:hidden;margin-top:5px}
+.fi-f{background:#0E2841}
+.fi-i{background:#009EDB}
+.fi-legend{display:flex;gap:8px;margin-top:3px;font-size:7.5px;color:var(--t3);
+  font-family:'IBM Plex Mono',monospace}
+.fi-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0;margin-top:.5px}
+
+/* ─ CONTENT ─────────────────────────────────────── */
+.content{padding:14px 18px;overflow-y:auto;max-height:calc(100vh - 86px)}
+
+/* Tabs */
+.tabs{display:flex;gap:3px;margin-bottom:13px;flex-wrap:wrap}
+.tab{padding:5px 12px;border:1px solid var(--line2);border-radius:4px;
+  background:#FFFFFF;font-size:9px;cursor:pointer;color:var(--t2);
+  font-family:'IBM Plex Mono',monospace;text-transform:uppercase;
+  letter-spacing:.06em;transition:.15s}
+.tab:hover:not(.on){border-color:var(--blue);color:var(--blue)}
+.tab.on{background:var(--blue);color:#FFFFFF;border-color:var(--blue)}
+.panel{display:none}.panel.on{display:block}
+
+/* KPI rows */
+.kpi4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.kpi3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.kpi{background:#FFFFFF;border:1px solid var(--line);border-radius:6px;
+  padding:10px 12px;box-shadow:var(--shadow)}
+.kpi.kr{background:var(--redbg);border-color:#E8C0BA}
+.kpi.kg{background:var(--greenbg);border-color:#B8D8BA}
+.kpi.ka{background:var(--amberbg);border-color:#E8D0A0}
+.kpi.kb{background:var(--bluebg);border-color:#A8D8F0}
+.kpi-l{font-size:8px;text-transform:uppercase;letter-spacing:.09em;color:var(--t3);
+  font-family:'IBM Plex Mono',monospace;margin-bottom:4px}
+.kpi-v{font-size:18px;font-weight:600;font-family:'IBM Plex Mono',monospace;line-height:1.2}
+.kpi-d{font-size:8.5px;margin-top:2px;font-family:'IBM Plex Mono',monospace;color:var(--t3)}
+.pos{color:var(--green)}.neg{color:var(--red)}.neu{color:var(--amber)}
+.sky2{color:var(--sky)}.navy{color:var(--navy)}.muted{color:var(--t3)}
+
+/* Cards */
+.cc{background:#FFFFFF;border:1px solid var(--line);border-radius:6px;
+  padding:12px;margin-bottom:11px;box-shadow:var(--shadow)}
+.cc-h{font-size:11px;font-weight:600;color:var(--navy);margin-bottom:2px}
+.cc-s{font-size:8.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace;margin-bottom:9px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:11px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:11px}
+
+/* Comparison rows */
+.cmp{display:flex;align-items:center;gap:7px;margin-bottom:6px}
+.cmp-l{width:146px;color:var(--t2);flex-shrink:0;font-size:9.5px}
+.cmp-track{flex:1;height:14px;position:relative}
+.cmp-bg{position:absolute;inset:0;background:var(--s2);border-radius:3px;overflow:hidden}
+.cmp-base-bar{height:100%;border-radius:3px}
+.cmp-tick{position:absolute;width:2px;height:100%;border-radius:1px;background:var(--navy)}
+.cmp-v{width:86px;font-size:9px;font-family:'IBM Plex Mono',monospace;text-align:right;flex-shrink:0}
+
+/* Tables */
+.tbl{width:100%;border-collapse:collapse;font-size:9.5px}
+.tbl th{text-align:left;color:var(--t3);font-weight:500;padding:5px 7px;
+  border-bottom:1.5px solid var(--navy);font-size:8px;text-transform:uppercase;
+  letter-spacing:.06em;font-family:'IBM Plex Mono',monospace;background:#FFFFFF}
+.tbl td{padding:5px 7px;border-bottom:1px solid var(--line);
+  color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:9.5px}
+.tbl tr:hover td{background:var(--s1)}
+
+/* Gauge */
+.gauge{display:flex;align-items:center;gap:7px;margin-bottom:5px}
+.gauge-l{width:136px;font-size:9.5px;color:var(--t2);flex-shrink:0}
+.gauge-track{flex:1;height:5px;background:var(--line);border-radius:3px;overflow:hidden}
+.gauge-fill{height:100%;border-radius:3px}
+.gauge-v{width:50px;font-size:9px;font-family:'IBM Plex Mono',monospace;
+  text-align:right;flex-shrink:0}
+
+/* Notify */
+.notify{border-radius:6px;padding:10px 12px;margin-bottom:11px;border:1px solid}
+.notify.info{background:var(--bluebg);border-color:#A8D8F0}
+.notify.warn{background:var(--amberbg);border-color:#E8D0A0}
+.notify.ok{background:var(--greenbg);border-color:#B8D8BA}
+.notify-t{font-size:8.5px;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;
+  letter-spacing:.1em;margin-bottom:4px;font-weight:600}
+.notify.info .notify-t{color:var(--blue2)}
+.notify.warn .notify-t{color:var(--amber)}
+.notify.ok .notify-t{color:var(--green)}
+.notify-b{font-size:10.5px;color:var(--text);line-height:1.55}
+
+/* F/I panel */
+.fi-card{background:#FFFFFF;border:1px solid var(--line);border-radius:6px;
+  padding:12px;margin-bottom:11px;box-shadow:var(--shadow)}
+.fi-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;padding-bottom:8px;
+  border-bottom:1px solid var(--line)}
+.fi-row:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.fi-sector{width:120px;font-size:10px;font-weight:600;color:var(--navy);flex-shrink:0}
+.fi-sliders{flex:1}
+.fi-sl-row{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.fi-sl-label{width:72px;font-size:8px;color:var(--t3);font-family:'IBM Plex Mono',monospace;flex-shrink:0}
+.fi-sl-track{flex:1;height:3px;-webkit-appearance:none;border-radius:2px;
+  outline:none;cursor:pointer}
+.fi-sl-track.func::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;
+  border-radius:50%;background:var(--navy);cursor:pointer;border:2px solid #FFF}
+.fi-sl-track.inv::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;
+  border-radius:50%;background:var(--blue);cursor:pointer;border:2px solid #FFF}
+.fi-val{width:48px;font-size:8.5px;font-family:'IBM Plex Mono',monospace;
+  text-align:right;flex-shrink:0}
+.fi-total{font-size:8.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace}
+
+/* Chain */
+.chain{display:flex;align-items:center;gap:0;overflow-x:auto;padding-bottom:4px;margin-bottom:8px}
+.cn{flex:1;min-width:80px;background:var(--s1);border:1px solid var(--line2);border-radius:4px;
+  padding:5px 6px;text-align:center;font-size:8.5px;font-weight:600;color:var(--navy);
+  line-height:1.25;white-space:nowrap}
+.cn.hl{background:var(--redbg);border-color:var(--red);color:var(--red)}
+.cn.res{background:var(--greenbg);border-color:var(--green);color:var(--green)}
+.carr{font-size:14px;color:var(--line2);padding:0 3px;flex-shrink:0}
+
+/* Footer */
+.footer{border-top:1px solid var(--line);padding:8px 22px;display:flex;
+  justify-content:space-between;font-size:8px;color:var(--t3);
+  font-family:'IBM Plex Mono',monospace;background:var(--s1)}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-left">
+    
+    <div class="hdr-title">
+      <h1>Simulador de Ajuste Fiscal — Colombia · PGN 2027</h1>
+      <p>Presupuesto De la Espriella $634.9B · Radicado 27 ago 2026 · ¿Cómo recortar $21–60B sin destruir desarrollo?</p>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <span class="badge b-red">DÉFICIT 8.2% PIB</span>
+    <span class="badge b-red">DEUDA 60.5% PIB</span>
+    <span class="badge b-amber">PGN 2027: $634.9B</span>
+    <span class="badge b-amber">PISO: −$21.9B</span>
+    <a class="badge b-blue" href="laboratorio_escenarios_desarrollo_colombia.html" style="text-decoration:none">→ LABORATORIO DE SHOCKS</a>
+    <div style="padding-left:12px;border-left:1px solid var(--line2);display:flex;align-items:center">
+      <img src="data:image/png;base64,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" alt="PNUD Logo" style="height:46px;width:auto;display:block;flex-shrink:0">
+    </div>
+  </div>
+</div>
+
+<div class="alert">
+  <span class="alert-txt">El gobierno De la Espriella radicó el <strong>PGN 2027 en $634.9B</strong> (14.2% más que 2026). El déficit real es <strong>8.2% del PIB</strong> y el servicio de la deuda subió <strong>54.7%</strong> a $155B — la cifra más alta de la historia. El ajuste piso requerido es de <strong>$21.9B</strong> para reducir el déficit primario de 4.4% a 3.3% del PIB. El rango de ajuste para el nuevo gobierno oscila entre $21B y $60B.</span>
+  <button class="alert-link" onclick="openTab('fi',document.querySelector('[data-t=fi]'))">Ver F/I por sector →</button>
+</div>
+
+<div class="shell">
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="meta-box">
+    <div class="meta-top">
+      <span class="meta-label">Recorte acumulado</span>
+      <span class="badge b-amber" id="meta-pib-badge">0.0% PIB</span>
+    </div>
+    <div class="meta-val" id="rv">$0.0B</div>
+    <div class="meta-sub">Rango: $0 – $60B COP · PGN 2027: $634.9B</div>
+    <div class="prog-track">
+      <div class="prog-fill" id="prog" style="width:0%;background:var(--green)"></div>
+    </div>
+    <div class="prog-labels">
+      <span>$0</span>
+      <span id="pct-label">0% del máximo</span>
+      <span>$60B</span>
+    </div>
+    <div style="display:flex;gap:4px;margin-top:6px">
+      <div style="flex:1;text-align:center;background:var(--greenbg);border:1px solid #B8D8BA;border-radius:4px;padding:3px">
+        <div style="font-size:8px;color:var(--t3);font-family:'IBM Plex Mono',monospace">Ajuste piso 2026</div>
+        <div style="font-size:10px;font-weight:600;color:var(--green);font-family:'IBM Plex Mono',monospace">$21.9B</div>
+      </div>
+      <div style="flex:1;text-align:center;background:var(--amberbg);border:1px solid #E8D0A0;border-radius:4px;padding:3px">
+        <div style="font-size:8px;color:var(--t3);font-family:'IBM Plex Mono',monospace">Escenario fuerte</div>
+        <div style="font-size:10px;font-weight:600;color:var(--amber);font-family:'IBM Plex Mono',monospace">$40–60B</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="btn-col">
+    <button class="btn btn-primary" onclick="optimizar()">⚙ Optimizar — mínimo daño social</button>
+    <button class="btn btn-ghost" onclick="escConfis()">Escenario piso ($21.9B)</button>
+    <button class="btn btn-ghost" onclick="lineal()">Recorte lineal (referencia)</button>
+    <button class="btn btn-ghost" onclick="resetAll()">↺ Restablecer</button>
+  </div>
+
+  <div class="sl-group">Palancas por sector · PGN 2027</div>
+  <div id="scontrols"></div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+<div class="tabs">
+  <button class="tab on" data-t="impacto" onclick="openTab('impacto',this)">IMPACTO SOCIAL</button>
+  <button class="tab" data-t="fi" onclick="openTab('fi',this)">FUNC. / INVERSIÓN</button>
+  <button class="tab" data-t="micromacro" onclick="openTab('micromacro',this)">PUENTE MICRO-MACRO</button>
+  <button class="tab" data-t="fiscal" onclick="openTab('fiscal',this)">CUADRO FISCAL</button>
+  <button class="tab" data-t="eficiencia" onclick="openTab('eficiencia',this)">EFICIENCIA</button>
+  <button class="tab" data-t="trayectoria" onclick="openTab('trayectoria',this)">TRAYECTORIA</button>
+  <button class="tab" data-t="metodo" onclick="openTab('metodo',this)">METODOLOGÍA</button>
+</div>
+
+<!-- TAB IMPACTO SOCIAL -->
+<div id="panel-impacto" class="panel on">
+  <div class="notify info" style="margin-bottom:11px">
+    <div class="notify-t">Qué muestra esta sección</div>
+    <div class="notify-b">Estima el impacto social del escenario de recortes actual sobre los indicadores de desarrollo. Los efectos se calculan multiplicando el monto recortado por sector por su elasticidad sobre cada indicador, calibrada con datos oficiales DANE y literatura económica. <strong>No son proyecciones oficiales</strong> — son órdenes de magnitud para apoyar decisiones. Ajusta los sliders de la barra izquierda para ver cómo cambian los resultados.</div>
+  </div>
+  <div id="notif"></div>
+  <div class="kpi4">
+    <div class="kpi kr"><div class="kpi-l">Personas adicionales en pobreza</div><div class="kpi-v neg" id="k-padd">+0</div><div class="kpi-d muted">estimado con recorte actual</div></div>
+    <div class="kpi kr"><div class="kpi-l">Δ Pobreza monetaria</div><div class="kpi-v neg" id="k-dpob">+0.0 pp</div><div class="kpi-d" id="k-pabs" style="color:var(--t3)">base: 33.0% · MESEP 2023</div></div>
+    <div class="kpi ka"><div class="kpi-l">Δ IPM multidimensional</div><div class="kpi-v neu" id="k-dipm">+0.0 pp</div><div class="kpi-d" id="k-iabs" style="color:var(--t3)">base: 16.2%</div></div>
+    <div class="kpi ka"><div class="kpi-l">Δ Desempleo</div><div class="kpi-v neu" id="k-ddes">+0.0 pp</div><div class="kpi-d" id="k-dabs" style="color:var(--t3)">base: 10.3% · GEIH 2023</div></div>
+  </div>
+  <div class="g2">
+    <div class="cc"><div class="cc-h">Indicadores — antes vs. después</div><div class="cc-s">Base 2026 vs. escenario simulado con recortes actuales</div><div id="cmp-rows"></div></div>
+    <div class="cc"><div class="cc-h">¿Quién absorbe el ajuste?</div><div class="cc-s">Distribución del impacto por quintil de ingreso</div><div style="position:relative;height:200px"><canvas id="ch-quintil"></canvas></div></div>
+  </div>
+  <div class="cc"><div class="cc-h">Daño social por peso recortado</div><div class="cc-s">Personas vulnerables adicionales por billón COP cortado · K/B · PGN 2027</div><div style="position:relative;height:200px"><canvas id="ch-damage"></canvas></div></div>
+</div>
+
+<!-- TAB F/I POR SECTOR -->
+<div id="panel-fi" class="panel">
+  <div class="notify info" style="margin-bottom:11px">
+    <div class="notify-t">Qué muestra esta sección</div>
+    <div class="notify-b">Desglosa cada sector en sus dos componentes presupuestales: <strong>Funcionamiento</strong> (salarios, servicios, transferencias — difícil de recortar sin afectar servicios) e <strong>Inversión</strong> (obras, programas, proyectos — mayor margen pero impacto en empleo de corto plazo). Cada componente tiene su propio slider para ajustar independientemente. La composición F/I varía mucho por sector: Transporte tiene 85% inversión; Salud tiene 95% funcionamiento.</div>
+  </div>
+  <div class="notify info">
+    <div class="notify-t">Funcionamiento vs. Inversión — PGN 2027</div>
+    <div class="notify-b">El PGN 2027 asigna <strong>62% a Funcionamiento ($392.5B)</strong> y solo <strong>14% a Inversión ($86.9B)</strong>. El otro 24% es servicio de la deuda ($155B) — intocable. Cada sector tiene una proporción distinta de F/I: recortar Funcionamiento impacta salarios y servicios; recortar Inversión impacta obras y programas. Ajusta los sliders de cada componente de forma independiente.</div>
+  </div>
+
+  <!-- Totales F/I -->
+  <div class="g3" style="margin-bottom:12px">
+    <div class="kpi kb">
+      <div class="kpi-l">PGN 2027 total</div>
+      <div class="kpi-v navy">$634.9B</div>
+      <div class="kpi-d muted">29.9% del PIB · PGN De la Espriella</div>
+    </div>
+    <div class="kpi" style="border-color:var(--navy);background:var(--s1)">
+      <div class="kpi-l">Recorte en funcionamiento</div>
+      <div class="kpi-v navy" id="fi-total-f">$0.0B</div>
+      <div class="kpi-d muted">de $392.5B disponible (62% PGN)</div>
+    </div>
+    <div class="kpi kb">
+      <div class="kpi-l">Recorte en inversión</div>
+      <div class="kpi-v sky2" id="fi-total-i">$0.0B</div>
+      <div class="kpi-d muted">de $86.9B disponible (14% PGN)</div>
+    </div>
+  </div>
+
+  <!-- Leyenda -->
+  <div style="display:flex;gap:16px;margin-bottom:10px;font-size:9px;color:var(--t3);font-family:'IBM Plex Mono',monospace">
+    <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:5px;background:var(--navy);border-radius:2px;display:inline-block"></span>Funcionamiento</span>
+    <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:5px;background:var(--blue);border-radius:2px;display:inline-block"></span>Inversión</span>
+    <span style="color:var(--t4)">Los sliders muestran el % de recorte aplicado a cada componente del sector</span>
+  </div>
+
+  <div class="g2">
+    <div class="fi-card"><div class="cc-h" style="margin-bottom:10px">Recorte por componente — sector a sector</div><div id="fi-controls"></div></div>
+    <div>
+      <div class="cc"><div class="cc-h">Composición F/I actual del PGN 2027</div><div class="cc-s">Funcionamiento + inversión como % de cada sector (presupuesto base)</div><div style="position:relative;height:240px"><canvas id="ch-fi-bar"></canvas></div></div>
+      <div class="cc"><div class="cc-h">Impacto del recorte por tipo de gasto</div><div class="cc-s">Daño social diferenciado: recortar inversión genera más desempleo en el corto plazo</div><div id="fi-impact-tbl"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB MICRO-MACRO -->
+<div id="panel-micromacro" class="panel">
+  <div class="notify info" style="margin-bottom:11px">
+    <div class="notify-t">Qué muestra esta sección</div>
+    <div class="notify-b">Muestra el canal de transmisión entre el recorte fiscal y la economía real, hogar por hogar. Un peso recortado en protección social (Q1–Q2, PMC≈0.90) genera más pérdida de demanda que el mismo peso recortado en gasto administrativo (Q4–Q5, PMC≈0.40). Por eso el multiplicador del gasto <strong>depende de quién absorbe el ajuste</strong>, no solo del monto total. Esta sección conecta la microsimulación bayesiana con el modelo macroeconómico.</div>
+  </div>
+  <div class="notify info"><div class="notify-t">Puente micro-macro — PGN 2027</div>
+    <div class="notify-b">La microsimulación agrega los cambios de ingreso hogar por hogar → consumo agregado → multiplicador distribucional → PIB → recaudo. El multiplicador depende de quién absorbe el shock: un peso al Q1 (PMC≈0.95) genera casi un peso de demanda; al Q5 (PMC≈0.35), solo 35 centavos.</div></div>
+  <div class="cc"><div class="cc-h">Canal keynesiano</div>
+    <div class="cc-s">Recorte en gasto social → ingreso del hogar → consumo → demanda → PIB → recaudo fiscal</div>
+    <div class="chain">
+      <div class="cn hl">Recorte gasto<br>social</div><div class="carr">→</div>
+      <div class="cn">ΔIngreso_i<br>por hogar</div><div class="carr">→</div>
+      <div class="cn">ΔConsumo_i<br>PMCᵢ·ΔIngreso_i</div><div class="carr">→</div>
+      <div class="cn">ΔDemanda<br>ΔC = Σ ΔCᵢ</div><div class="carr">→</div>
+      <div class="cn">ΔPIB<br>ΔY = m·ΔC</div><div class="carr">→</div>
+      <div class="cn res">ΔRecaudo<br>ΔTax = τ·ΔY</div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="cc"><div class="cc-h">PMC por quintil de ingreso</div><div class="cc-s">Un peso adicional al Q1 genera casi un peso de demanda. Al Q5, solo 35 centavos.</div>
+      <table class="tbl"><thead><tr><th>Quintil</th><th>Ingreso ref./mes</th><th>PMC</th><th>Demanda por $1</th></tr></thead><tbody>
+        <tr><td>Q1 (más pobre)</td><td>&lt; $389K COP</td><td style="color:var(--red);font-weight:600">0.95</td><td style="color:var(--red)">$0.95</td></tr>
+        <tr><td>Q2</td><td>$389K–$750K</td><td style="color:var(--red);font-weight:600">0.82</td><td style="color:var(--red)">$0.82</td></tr>
+        <tr><td>Q3</td><td>$750K–$1.4M</td><td style="color:var(--amber)">0.68</td><td style="color:var(--amber)">$0.68</td></tr>
+        <tr><td>Q4</td><td>$1.4M–$3M</td><td style="color:var(--amber)">0.52</td><td style="color:var(--amber)">$0.52</td></tr>
+        <tr><td>Q5 (más rico)</td><td>&gt; $3M</td><td style="color:var(--green);font-weight:600">0.35</td><td style="color:var(--green)">$0.35</td></tr>
+      </tbody></table>
+    </div>
+    <div class="cc"><div class="cc-h">Multiplicador distribucional — escenario actual</div>
+      <div class="cc-s">m_dist = 1/(1−c̄) · c̄ = Σᵢ ωᵢ·PMCᵢ ponderado</div>
+      <div id="mult-display"><div style="color:var(--t3);font-size:10px;padding:20px;text-align:center">Ajuste un slider para ver el multiplicador distribucional.</div></div>
+    </div>
+  </div>
+  <div class="cc"><div class="cc-h">Retroalimentación fiscal — pérdida de recaudo por sector</div>
+    <div class="cc-s">Efecto neto = recorte bruto − pérdida de recaudo · τ=0.14 · m_dist≈0.6 (BanRep SVAR 2020)</div>
+    <div id="feedback-table"><div style="color:var(--t3);font-size:10px;padding:12px;text-align:center">Ajuste sliders para ver análisis de retroalimentación.</div></div>
+  </div>
+</div>
+
+<!-- TAB FISCAL -->
+<div id="panel-fiscal" class="panel">
+  <div class="notify info" style="margin-bottom:11px">
+    <div class="notify-t">Qué muestra esta sección</div>
+    <div class="notify-b">Presenta el cuadro fiscal completo del escenario actual: recorte total, brecha respecto al ajuste piso de $21.9B, y la pérdida estimada de recaudo tributario por el efecto de retroalimentación (la caída en demanda agregada reduce el PIB y con él los impuestos). El PGN 2027 base es de <strong>$634.9 billones</strong> radicado por el gobierno De la Espriella el 27 de agosto de 2026.</div>
+  </div>
+  <div class="kpi3">
+    <div class="kpi ka"><div class="kpi-l">Recorte total simulado</div><div class="kpi-v neu" id="kf-tot">$0.0B</div><div class="kpi-d muted" id="kf-pib">0.00% PIB</div></div>
+    <div class="kpi kr"><div class="kpi-l">Brecha vs. ajuste piso ($21.9B)</div><div class="kpi-v neg" id="kf-gap">$21.9B faltantes</div><div class="kpi-d muted">recorte mínimo aprobado para reducir el déficit primario</div></div>
+    <div class="kpi"><div class="kpi-l">Pérdida de recaudo (feedback)</div><div class="kpi-v neu" id="kf-rec">$0.0B</div><div class="kpi-d muted">vía demanda agregada τ·m·PMC̄</div></div>
+  </div>
+  <div class="cc"><div class="cc-h">Desglose por sector — PGN 2027</div>
+    <div class="cc-s">Recorte simulado · presupuesto base 2027 · F/I del sector · daño social · pérdida de recaudo</div>
+    <table class="tbl"><thead><tr><th>Sector</th><th>Presup. 2027</th><th>%F · %I</th><th>Recorte</th><th>Daño K/B</th><th>PMC</th><th>Pérdida recaudo</th></tr></thead><tbody id="fiscal-tbl"></tbody></table>
+  </div>
+  <div class="g2">
+    <div class="cc"><div class="cc-h">Composición del ajuste</div><div class="cc-s">Distribución del recorte por sector</div><div style="position:relative;height:220px"><canvas id="ch-pie"></canvas></div></div>
+    <div class="cc"><div class="cc-h">Daño social vs. monto recortado</div><div class="cc-s">Relación entre volumen de recorte e impacto por peso</div><div style="position:relative;height:220px"><canvas id="ch-bubble"></canvas></div></div>
+  </div>
+</div>
+
+<!-- TAB EFICIENCIA -->
+<div id="panel-eficiencia" class="panel">
+  <div class="notify info" style="margin-bottom:11px">
+    <div class="notify-t">Qué muestra esta sección</div>
+    <div class="notify-b">Compara el escenario actual de recortes con la distribución óptima: la misma meta fiscal con el menor daño social posible. El optimizador asigna los recortes comenzando por los sectores de menor daño por peso (gasto administrativo, defensa) y avanza hacia los de mayor daño (educación, salud, protección social) solo si es necesario. La frontera eficiente muestra el mínimo daño posible para cada nivel de recorte entre $0 y $60B.</div>
+  </div>
+  <div class="notify ok"><div class="notify-t">Principio del optimizador</div>
+    <div class="notify-b">La misma meta de ajuste puede alcanzarse con 71% menos daño social si los recortes se distribuyen correctamente. Protección social tiene 14× más daño por peso que gasto administrativo. El optimizador prioriza recortes donde el daño marginal es menor: primero inversión en sectores no sociales, luego funcionamiento administrativo, protegiendo salud, educación y protección social.</div></div>
+  <div class="cc"><div class="cc-h">Ranking de daño social por peso recortado</div>
+    <div class="cc-s">K personas adicionales en pobreza por billón COP cortado · rojo = proteger · verde = recortar primero</div>
+    <div id="ranking"></div>
+  </div>
+  <div class="g2">
+    <div class="cc"><div class="cc-h">Actual vs. óptimo</div><div class="cc-s">Mismo monto, menor daño</div><div style="position:relative;height:220px"><canvas id="ch-opt"></canvas></div></div>
+    <div class="cc"><div class="cc-h">Frontera eficiente del ajuste</div><div class="cc-s">Mínimo daño posible por nivel de recorte $0–$60B</div><div style="position:relative;height:220px"><canvas id="ch-frontier"></canvas></div></div>
+  </div>
+</div>
+
+<!-- TAB TRAYECTORIA -->
+<div id="panel-trayectoria" class="panel">
+  <div class="notify info" style="margin-bottom:11px">
+    <div class="notify-t">Qué muestra esta sección</div>
+    <div class="notify-b">Proyecta la trayectoria de los indicadores sociales entre 2025 y 2028 bajo tres escenarios: sin ajuste fiscal, con el recorte actual simulado, y con el recorte óptimo. Las bandas de incertidumbre del 80% reflejan la varianza en los efectos de política. El escenario "sin ajuste" no es neutro — el deterioro fiscal sin corrección también genera efectos negativos vía inflación, tasas de interés y confianza.</div>
+  </div>
+  <div class="kpi3">
+    <div class="kpi kr"><div class="kpi-l">Pobreza proyectada 2028</div><div class="kpi-v neg" id="pr-pob">--</div><div class="kpi-d muted">ajuste actual simulado</div></div>
+    <div class="kpi ka"><div class="kpi-l">IPM proyectado 2028</div><div class="kpi-v neu" id="pr-ipm">--</div><div class="kpi-d muted">ajuste actual simulado</div></div>
+    <div class="kpi"><div class="kpi-l">Desempleo proyectado 2028</div><div class="kpi-v sky2" id="pr-des">--</div><div class="kpi-d muted">ajuste actual simulado</div></div>
+  </div>
+  <div class="cc"><div class="cc-h">Trayectoria de pobreza — 3 escenarios</div>
+    <div class="cc-s">Sin ajuste · ajuste actual · ajuste óptimo · bandas de incertidumbre 80%</div>
+    <div style="position:relative;height:260px"><canvas id="ch-traj"></canvas></div>
+  </div>
+</div>
+
+<!-- TAB METODOLOGÍA -->
+<div id="panel-metodo" class="panel">
+  <div class="notify info" style="margin-bottom:11px">
+    <div class="notify-t">Qué muestra esta sección</div>
+    <div class="notify-b">Detalla los supuestos, elasticidades y datos de referencia usados en el simulador. Las elasticidades provienen de literatura económica calibrada para Colombia (DANE, BanRep, DNP, BM, BID). Los presupuestos base son del PGN 2027 radicado el 27 de agosto de 2026. El simulador es un <strong>prototipo conceptual de primer orden</strong> — no reemplaza modelos de equilibrio general ni análisis de impacto fiscal de Hacienda.</div>
+  </div>
+  <div class="notify warn"><div class="notify-t">Naturaleza de las estimaciones</div>
+    <div class="notify-b">Estimaciones de primer orden basadas en elasticidades calibradas. Los presupuestos son del PGN 2027 radicado por el gobierno De la Espriella el 27 de agosto de 2026. El déficit fiscal actualizado al 8.2% del PIB. El ajuste piso requerido es de $21.9B para reducir el déficit primario de 4.4% a 3.3% del PIB. Los resultados son órdenes de magnitud, no predicciones puntuales.</div></div>
+  <div class="g2">
+    <div class="cc"><div class="cc-h">Datos macro PGN 2027</div>
+      <table class="tbl"><thead><tr><th>Componente</th><th>Monto</th><th>Var. vs. 2026</th></tr></thead><tbody>
+        <tr><td>PGN 2027 total</td><td>$634.9B</td><td style="color:var(--red)">+14.2%</td></tr>
+        <tr><td>Funcionamiento</td><td>$392.5B (62%)</td><td style="color:var(--red)">+7.3%</td></tr>
+        <tr><td>Servicio de la deuda</td><td>$155.0B (24%)</td><td style="color:var(--red)">+54.7%</td></tr>
+        <tr><td>Inversión</td><td>$86.9B (14%)</td><td style="color:var(--green)">−2.8%</td></tr>
+        <tr><td>Déficit fiscal 2026 (real)</td><td>8.2% PIB</td><td style="color:var(--red)">vs. 5.3% estimado Petro</td></tr>
+        <tr><td>Déficit 2027 (proyectado)</td><td>9.4% PIB</td><td style="color:var(--red)">sin ajuste adicional</td></tr>
+        <tr><td>Deuda pública</td><td>60.5% PIB</td><td style="color:var(--red)">récord histórico</td></tr>
+        <tr><td>Ajuste piso 2026</td><td>$21.9B</td><td>mínimo para déficit primario 3.3% PIB</td></tr>
+      </tbody></table>
+    </div>
+    <div class="cc"><div class="cc-h">Elasticidades y datos base</div>
+      <table class="tbl"><thead><tr><th>Relación</th><th>Valor</th><th>Fuente</th></tr></thead><tbody>
+        <tr><td>Pobreza monetaria base</td><td>33.0%</td><td>DANE MESEP 2023</td></tr>
+        <tr><td>IPM nacional</td><td>16.2%</td><td>DANE Alkire-Foster</td></tr>
+        <tr><td>Informalidad laboral</td><td>56.3%</td><td>GEIH DANE 2023</td></tr>
+        <tr><td>Desempleo</td><td>10.3%</td><td>GEIH DANE 2023</td></tr>
+        <tr><td>Prot. social → pobreza</td><td>−0.65</td><td>MESEP/DNP</td></tr>
+        <tr><td>Multiplicador fiscal</td><td>0.60</td><td>BanRep SVAR 2020</td></tr>
+        <tr><td>Recaudo/PIB (τ)</td><td>0.14</td><td>DIAN/MHCP</td></tr>
+        <tr><td>PIB 2027 estimado</td><td>$2,122B COP</td><td>Hacienda (crecimiento 1.8%)</td></tr>
+      </tbody></table>
+    </div>
+  </div>
+</div>
+
+</div></div>
+
+<div class="footer">
+  <span>PNUD Colombia · Simulador de Ajuste Fiscal · PGN 2027 ($634.9B · radicado 27 ago 2026) · Prototipo conceptual</span>
+  <span>MHCP · BanRep · DANE · El Colombiano · El Espectador · agosto 2026</span>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// DATOS — PGN 2027 (gobierno De la Espriella, 27 ago 2026)
+// ══════════════════════════════════════════════════════════════
+const PIB=2122, META_MAX=60, META_PISO=21.9, TAU=0.14, M_DIST=0.60;
+const BASE={pobreza:33.0,ipm:16.2,informalidad:56.3,desempleo:10.3,coberEduc:78.4,accSalud:82.1};
+
+// Sectores: presupuesto base PGN 2027
+// bF = funcionamiento base (B COP)
+// bI = inversión base (B COP)
+// maxPF = % máx de recorte en funcionamiento
+// maxPI = % máx de recorte en inversión
+// efx = elasticidades por indicador
+const SECTORES=[
+  {id:"educacion",n:"Educación",bF:86.1,bI:6.4,maxPF:15,maxPI:40,
+   dano:8.4,pmc:0.78,quintil:[0.35,0.28,0.20,0.12,0.05],
+   efx:{pobreza:0.18,ipm:0.32,desempleo:0.05,informalidad:0.08,coberEduc:0.40,accSalud:0.00},
+   nota:"Mayor sector PGN"},
+  {id:"salud",n:"Salud",bF:75.5,bI:4.2,maxPF:12,maxPI:35,
+   dano:9.1,pmc:0.82,quintil:[0.38,0.26,0.18,0.12,0.06],
+   efx:{pobreza:0.14,ipm:0.28,desempleo:0.02,informalidad:0.03,coberEduc:0.00,accSalud:0.55},
+   nota:"ADRES + APS"},
+  {id:"trabajo",n:"Trabajo / Pensiones",bF:66.5,bI:8.5,maxPF:10,maxPI:30,
+   dano:12.6,pmc:0.90,quintil:[0.52,0.28,0.12,0.06,0.02],
+   efx:{pobreza:0.38,ipm:0.20,desempleo:0.03,informalidad:0.05,coberEduc:0.05,accSalud:0.04},
+   nota:"SENA + Colpensiones"},
+  {id:"defensa",n:"Defensa y Policía",bF:51.6,bI:6.4,maxPF:15,maxPI:35,
+   dano:1.8,pmc:0.45,quintil:[0.20,0.25,0.25,0.20,0.10],
+   efx:{pobreza:0.02,ipm:0.01,desempleo:0.08,informalidad:0.03,coberEduc:0.00,accSalud:0.00},
+   nota:"Mayor margen f"},
+  {id:"inclusion",n:"Inclusión Social",bF:13.5,bI:21.5,maxPF:20,maxPI:40,
+   dano:11.2,pmc:0.88,quintil:[0.50,0.30,0.13,0.05,0.02],
+   efx:{pobreza:0.32,ipm:0.18,desempleo:0.04,informalidad:0.06,coberEduc:0.04,accSalud:0.05},
+   nota:"Alta inversión social"},
+  {id:"transporte",n:"Transporte",bF:3.1,bI:16.9,maxPF:25,maxPI:40,
+   dano:4.2,pmc:0.58,quintil:[0.22,0.28,0.26,0.16,0.08],
+   efx:{pobreza:0.08,ipm:0.06,desempleo:0.20,informalidad:0.14,coberEduc:0.00,accSalud:0.01},
+   nota:"85% es inversión"},
+  {id:"hacienda",n:"Hacienda / Admin",bF:20.0,bI:2.0,maxPF:30,maxPI:50,
+   dano:0.9,pmc:0.40,quintil:[0.15,0.20,0.25,0.25,0.15],
+   efx:{pobreza:0.01,ipm:0.01,desempleo:0.05,informalidad:0.02,coberEduc:0.00,accSalud:0.00},
+   nota:"Recortar primero"},
+  {id:"justicia",n:"Justicia",bF:10.0,bI:2.0,maxPF:20,maxPI:35,
+   dano:3.1,pmc:0.55,quintil:[0.22,0.24,0.24,0.18,0.12],
+   efx:{pobreza:0.04,ipm:0.03,desempleo:0.04,informalidad:0.05,coberEduc:0.00,accSalud:0.00},
+   nota:"Canal institucional"},
+  {id:"agricultura",n:"Agricultura",bF:5.0,bI:5.5,maxPF:25,maxPI:45,
+   dano:7.8,pmc:0.80,quintil:[0.42,0.30,0.16,0.09,0.03],
+   efx:{pobreza:0.12,ipm:0.10,desempleo:0.10,informalidad:0.18,coberEduc:0.02,accSalud:0.03},
+   nota:"Pobreza rural 48%"},
+  {id:"vivienda",n:"Vivienda",bF:2.5,bI:5.5,maxPF:25,maxPI:40,
+   dano:5.6,pmc:0.72,quintil:[0.40,0.30,0.18,0.09,0.03],
+   efx:{pobreza:0.06,ipm:0.14,desempleo:0.06,informalidad:0.04,coberEduc:0.00,accSalud:0.02},
+   nota:"70% es inversión"},
+];
+
+let stateF={}, stateI={};
+SECTORES.forEach(s=>{stateF[s.id]=0;stateI[s.id]=0;});
+let charts={};
+const $=id=>document.getElementById(id);
+const dc=id=>{if(charts[id]){charts[id].destroy();delete charts[id];}};
+const fmt=(v,d=1)=>v.toFixed(d);
+const fmtB=v=>'$'+v.toFixed(1)+'B';
+const dColor=d=>d>=9?'var(--red)':d>=5?'var(--amber)':d>=3?'var(--sky)':'var(--green)';
+const PAL=['#C0392B','#E67E22','#009EDB','#196B24','#8E44AD','#0F9ED5','#D4770A','#27AE60','#E74C3C','#3498DB'];
+
+function calcCut(s){
+  const cf=s.bF*stateF[s.id]/100, ci=s.bI*stateI[s.id]/100;
+  return {f:cf,i:ci,t:cf+ci};
+}
+function calcTotales(){
+  let totalF=0,totalI=0,totalT=0;
+  const d={pobreza:0,ipm:0,desempleo:0,informalidad:0,coberEduc:0,accSalud:0};
+  const qi=[0,0,0,0,0];
+  let recaudo=0,cBar=0,totalW=0;
+  SECTORES.forEach(s=>{
+    const {f,i,t}=calcCut(s);
+    totalF+=f;totalI+=i;totalT+=t;
+    Object.keys(d).forEach(k=>{d[k]+=(s.efx[k]||0)*t;});
+    s.quintil.forEach((q,qi_i)=>{qi[qi_i]+=q*s.dano*t;});
+    recaudo+=TAU*M_DIST*s.pmc*t;
+    if(t>0){cBar+=s.pmc*t;totalW+=t;}
+  });
+  cBar=totalW>0?cBar/totalW:0.65;
+  const mDist=totalW>0?1/(1-cBar):0;
+  return{totalF,totalI,totalT,d,qi,recaudo,cBar,mDist,
+    pobFinal:BASE.pobreza+d.pobreza,ipmFinal:BASE.ipm+d.ipm,
+    despFinal:BASE.desempleo+d.desempleo,
+    persAdd:Math.round(d.pobreza*510000)};
+}
+function calcOptD(key){
+  const srt=[...SECTORES].sort((a,b)=>a.dano-b.dano);
+  let rem=META_PISO,dv=0;
+  srt.forEach(s=>{if(rem<=0)return;const mc=s.bI*s.maxPI/100,cut=Math.min(mc,rem);dv+=(s.efx[key]||0)*cut;rem-=cut;});
+  return dv;
+}
+
+// Acciones
+function optimizar(){
+  SECTORES.forEach(s=>{stateF[s.id]=0;stateI[s.id]=0;});
+  const srt=[...SECTORES].sort((a,b)=>a.dano-b.dano);
+  let rem=META_PISO;
+  // First cut investment in low-damage sectors, then funcionamiento
+  srt.forEach(s=>{
+    if(rem<=0)return;
+    const maxI=s.bI*s.maxPI/100, cutI=Math.min(maxI,rem);
+    stateI[s.id]=(cutI/s.bI)*100; rem-=cutI;
+  });
+  srt.forEach(s=>{
+    if(rem<=0)return;
+    const maxF=s.bF*s.maxPF/100, cutF=Math.min(maxF,rem);
+    stateF[s.id]=(cutF/s.bF)*100; rem-=cutF;
+  });
+  syncUI();renderAll();
+  showNotif('Óptimo aplicado: recortes en inversión de sectores de menor daño primero, luego funcionamiento. Protección social, salud y educación quedan protegidos.','ok');
+}
+function escConfis(){
+  resetAll(true);
+  // Escenario piso: recortes proporcionales al máximo disponible
+  const total=SECTORES.reduce((a,s)=>a+s.bI*s.maxPI/100+s.bF*s.maxPF/100,0);
+  const share=META_PISO/total;
+  SECTORES.forEach(s=>{
+    stateI[s.id]=Math.min(share*100*s.bI*s.maxPI/100/s.bI,s.maxPI);
+    stateF[s.id]=Math.min(share*100*s.bF*s.maxPF/100/s.bF,s.maxPF);
+  });
+  syncUI();renderAll();
+  showNotif('Escenario piso: $21.9B de recorte distribuido proporcionalmente — mínimo necesario para reducir el déficit primario de 4.4% a 3.3% del PIB.','ok');
+}
+function lineal(){
+  SECTORES.forEach(s=>{
+    const tot=s.bF+s.bI, share=(META_PISO/SECTORES.reduce((a,sx)=>a+sx.bF+sx.bI,0));
+    stateF[s.id]=Math.min(share*100,s.maxPF);
+    stateI[s.id]=Math.min(share*100,s.maxPI);
+  });
+  syncUI();renderAll();
+  showNotif('Recorte lineal: todos los sectores reducidos en el mismo porcentaje de su presupuesto total. Esta es la referencia de comparación — generalmente no es la estrategia óptima.','warn');
+}
+function resetAll(silent){
+  SECTORES.forEach(s=>{stateF[s.id]=0;stateI[s.id]=0;});
+  syncUI();renderAll();
+  if(!silent) showNotif('','ok');
+}
+function syncUI(){
+  SECTORES.forEach(s=>{
+    const sf=$('slf-'+s.id),si=$('sli-'+s.id);
+    if(sf){sf.value=stateF[s.id];styleSlider(sf,stateF[s.id],s.maxPF,'var(--navy)');}
+    if(si){si.value=stateI[s.id];styleSlider(si,stateI[s.id],s.maxPI,'var(--blue)');}
+    const sv=$('sv-'+s.id);
+    if(sv){const{t}=calcCut(s);sv.textContent=t>0?fmtB(t):'—';}
+    // fi panel
+    const sfv=$('fif-v-'+s.id),siv=$('fii-v-'+s.id);
+    if(sfv) sfv.textContent=fmtB(s.bF*stateF[s.id]/100);
+    if(siv) siv.textContent=fmtB(s.bI*stateI[s.id]/100);
+    // sidebar slider
+    const sb=$('sb-sl-'+s.id);
+    if(sb){
+      const pct=(calcCut(s).t/(s.bF+s.bI)*100);
+      sb.style.width=Math.min(pct,100)+'%';
+    }
+  });
+}
+function styleSlider(input,val,max,col){
+  const pct=(val/max*100).toFixed(0);
+  input.style.background=`linear-gradient(to right,${col} 0%,${col} ${pct}%,#DDE3EA ${pct}%)`;
+}
+
+function renderAll(){
+  const T=calcTotales();
+  renderMeta(T);renderKPIs(T);renderCmps(T);renderFiscalTbl(T);
+  renderFIPanel(T);renderMicroMacro(T);renderRanking();renderTrajTbl(T);
+  renderChartQ(T);renderChartDamage();renderChartPie(T);
+  renderChartBubble();renderChartOpt(T);renderChartFrontier();
+  renderChartTraj(T);renderChartFIBar();
+}
+
+function renderMeta(T){
+  const pct=T.totalT/META_MAX;
+  $('rv').textContent=fmtB(T.totalT);
+  $('pct-label').textContent=fmt(pct*100,0)+'% del máximo ($60B)';
+  const prog=$('prog');
+  prog.style.width=Math.min(pct*100,100)+'%';
+  prog.style.background=pct<0.365?'var(--green)':pct<0.75?'var(--amber)':'var(--red)';
+  const pib=T.totalT/PIB*100;
+  $('meta-pib-badge').textContent=fmt(pib,2)+'% PIB';
+}
+
+function renderKPIs(T){
+  const sign=v=>v>0?'+':'';
+  $('k-padd').textContent=(T.persAdd>0?'+':'')+Math.abs(T.persAdd).toLocaleString('es-CO');
+  $('k-padd').className='kpi-v '+(T.persAdd>0?'neg':'pos');
+  $('k-dpob').textContent=sign(T.d.pobreza)+fmt(T.d.pobreza)+' pp';
+  $('k-dpob').className='kpi-v '+(T.d.pobreza>0?'neg':'pos');
+  $('k-pabs').textContent='nuevo: '+fmt(T.pobFinal)+'%';
+  $('k-dipm').textContent=sign(T.d.ipm)+fmt(T.d.ipm)+' pp';
+  $('k-iabs').textContent='nuevo: '+fmt(T.ipmFinal)+'%';
+  $('k-ddes').textContent=sign(T.d.desempleo)+fmt(T.d.desempleo)+' pp';
+  $('k-dabs').textContent='nuevo: '+fmt(T.despFinal)+'%';
+  $('kf-tot').textContent=fmtB(T.totalT)+' COP';
+  $('kf-pib').textContent=fmt(T.totalT/PIB*100,2)+'% del PIB';
+  const gap=META_PISO-T.totalT;
+  $('kf-gap').textContent=gap>0?'$'+gap.toFixed(1)+'B faltantes':'META ALCANZADA';
+  $('kf-gap').className='kpi-v '+(gap>0?'neg':'pos');
+  $('kf-rec').textContent=fmtB(T.recaudo)+' COP';
+  $('pr-pob').textContent=fmt(BASE.pobreza-0.4*4+T.d.pobreza*0.7)+'%';
+  $('pr-ipm').textContent=fmt(BASE.ipm-0.2*4+T.d.ipm*0.7)+'%';
+  $('pr-des').textContent=fmt(BASE.desempleo-0.1*4+T.d.desempleo*0.7)+'%';
+  // FI totals
+  $('fi-total-f').textContent=fmtB(T.totalF);
+  $('fi-total-i').textContent=fmtB(T.totalI);
+}
+
+function renderCmps(T){
+  const rows=[
+    {k:'pobreza',l:'Pobreza monetaria',base:BASE.pobreza,inv:true},
+    {k:'ipm',l:'IPM multidimensional',base:BASE.ipm,inv:true},
+    {k:'desempleo',l:'Desempleo',base:BASE.desempleo,inv:true},
+    {k:'informalidad',l:'Informalidad',base:BASE.informalidad,inv:true},
+    {k:'coberEduc',l:'Cobertura educativa',base:BASE.coberEduc,inv:false},
+    {k:'accSalud',l:'Acceso salud',base:BASE.accSalud,inv:false},
+  ];
+  const el=$('cmp-rows');el.innerHTML='';
+  rows.forEach(r=>{
+    const delta=T.d[r.k],nuevo=r.base+delta;
+    const bad=r.inv?delta>0:delta<0;
+    const col=Math.abs(delta)<0.05?'var(--t3)':bad?'var(--red)':'var(--green)';
+    const maxV=Math.max(r.base,nuevo,30),bpct=(r.base/maxV*100).toFixed(0),npct=(nuevo/maxV*100).toFixed(0);
+    const dStr=(delta>=0?'+':'')+fmt(delta)+'pp';
+    el.innerHTML+=`<div class="cmp">
+      <div class="cmp-l">${r.l}</div>
+      <div class="cmp-track">
+        <div class="cmp-bg"><div class="cmp-base-bar" style="width:${Math.max(bpct,npct)}%;background:var(--s3)"></div></div>
+        <div style="position:absolute;top:0;left:0;height:100%;width:${npct}%;background:${col};opacity:.35;border-radius:3px"></div>
+        <div class="cmp-tick" style="left:${bpct}%"></div>
+      </div>
+      <div class="cmp-v" style="color:${col}">${fmt(r.base)}→${fmt(nuevo)}% (${dStr})</div>
+    </div>`;
+  });
+}
+
+function renderFiscalTbl(T){
+  const el=$('fiscal-tbl');if(!el)return;
+  el.innerHTML=SECTORES.map(s=>{
+    const{f,i,t}=calcCut(s);
+    const rl=TAU*M_DIST*s.pmc*t;
+    const totB=s.bF+s.bI;
+    const pctF=Math.round(s.bF/totB*100),pctI=Math.round(s.bI/totB*100);
+    const dc=dColor(s.dano);
+    return`<tr><td>${s.n}</td><td>${fmtB(totB)}</td>
+      <td><span style="color:var(--navy)">${pctF}%F</span> / <span style="color:var(--blue)">${pctI}%I</span></td>
+      <td style="color:var(--amber)">${t>0?fmtB(t):'—'}</td>
+      <td style="color:${dc}">${s.dano}K</td>
+      <td>${s.pmc.toFixed(2)}</td>
+      <td style="color:var(--amber)">${t>0?'$'+rl.toFixed(2)+'B':'—'}</td></tr>`;
+  }).join('');
+}
+
+function renderFIPanel(T){
+  // Impact table
+  const el=$('fi-impact-tbl');if(!el)return;
+  const activos=SECTORES.filter(s=>{const{t}=calcCut(s);return t>0;});
+  if(!activos.length){el.innerHTML='<div style="color:var(--t3);font-size:10px;padding:12px;text-align:center">Ajuste sliders para ver el análisis F/I.</div>';return;}
+  el.innerHTML=`<table class="tbl"><thead><tr><th>Sector</th><th>Recorte F</th><th>Recorte I</th><th>Impacto empleo</th></tr></thead><tbody>${
+    activos.map(s=>{
+      const{f,i}=calcCut(s);
+      const impEmp=(s.efx.desempleo||0)*(f+i);
+      return`<tr><td>${s.n}</td><td style="color:var(--navy)">$${f.toFixed(1)}B</td>
+        <td style="color:var(--blue)">$${i.toFixed(1)}B</td>
+        <td style="color:${impEmp>0.05?'var(--red)':'var(--t3)'}">+${fmt(impEmp,2)} pp</td></tr>`;
+    }).join('')
+  }</tbody></table>`;
+}
+
+function renderMicroMacro(T){
+  const md=$('mult-display');if(!md)return;
+  if(T.totalT===0){md.innerHTML='<div style="color:var(--t3);font-size:10px;padding:20px;text-align:center">Ajuste un slider para calcular el multiplicador distribucional.</div>';return;}
+  const mD=(1/(1-T.cBar)).toFixed(3);
+  const col=T.cBar>0.65?'var(--red)':T.cBar>0.55?'var(--amber)':'var(--green)';
+  md.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+    <div class="kpi"><div class="kpi-l">PMC media ponderada (c̄)</div>
+      <div class="kpi-v" style="color:${col}">${T.cBar.toFixed(3)}</div><div class="kpi-d muted">ponderada por volumen de corte</div></div>
+    <div class="kpi"><div class="kpi-l">Multiplicador distribucional</div>
+      <div class="kpi-v" style="color:${col}">${mD}</div><div class="kpi-d muted">m_dist = 1/(1−c̄)</div></div>
+  </div>
+  <div style="background:var(--s1);border:1px solid var(--line);border-radius:4px;padding:8px;font-size:10px;color:var(--t2);line-height:1.55">
+    <b>Fórmula:</b> m_dist = 1/(1 − ${T.cBar.toFixed(3)}) = <b style="color:${col}">${mD}</b> &nbsp;|&nbsp; Pérdida de recaudo total: <b>$${T.recaudo.toFixed(2)}B</b>
+  </div>`;
+  const ft=$('feedback-table');if(!ft)return;
+  const act=SECTORES.filter(s=>{const{t}=calcCut(s);return t>0;});
+  if(!act.length){ft.innerHTML='<div style="color:var(--t3);font-size:10px;padding:12px;text-align:center">Ajuste sliders para ver retroalimentación.</div>';return;}
+  ft.innerHTML=`<table class="tbl"><thead><tr><th>Sector</th><th>Recorte</th><th>PMC</th><th>Pérdida recaudo</th><th>Ahorro neto</th></tr></thead><tbody>${
+    act.map(s=>{const{t}=calcCut(s);const rl=TAU*M_DIST*s.pmc*t;const neto=t-rl;
+      const col=rl/t>0.07?'var(--red)':rl/t>0.04?'var(--amber)':'var(--green)';
+      return`<tr><td>${s.n}</td><td>${fmtB(t)}</td><td>${s.pmc.toFixed(2)}</td>
+        <td style="color:${col}">$${rl.toFixed(2)}B (${fmt(rl/t*100)}%)</td>
+        <td style="color:var(--green)">$${neto.toFixed(2)}B</td></tr>`;
+    }).join('')
+  }</tbody></table>`;
+}
+
+function renderRanking(){
+  const el=$('ranking');if(!el)return;
+  const srt=[...SECTORES].sort((a,b)=>b.dano-a.dano);
+  const max=srt[0].dano;
+  el.innerHTML=srt.map(s=>{
+    const pct=(s.dano/max*100).toFixed(0),col=dColor(s.dano);
+    const{t}=calcCut(s);
+    const rec=t>0?` <span style="color:var(--amber);font-size:8px"> ← recortando $${t.toFixed(1)}B</span>`:'';
+    return`<div class="gauge">
+      <div class="gauge-l">${s.n}${rec}</div>
+      <div class="gauge-track"><div class="gauge-fill" style="width:${pct}%;background:${col}"></div></div>
+      <div class="gauge-v" style="color:${col}">${s.dano}K/B</div>
+    </div>`;
+  }).join('');
+}
+
+function renderTrajTbl(T){}
+
+function showNotif(txt,type){
+  const el=$('notif');if(!el)return;
+  if(!txt){el.innerHTML='';return;}
+  const tmap={ok:'Resultado',warn:'Referencia',info:'Información'};
+  el.innerHTML=`<div class="notify ${type}"><div class="notify-t">${tmap[type]||''}</div><div class="notify-b">${txt}</div></div>`;
+}
+
+// ── CHARTS ────────────────────────────────────────────────────
+function renderChartQ(T){
+  dc('ch-quintil');
+  const tot=T.qi.reduce((a,b)=>a+b,1e-9);
+  charts['ch-quintil']=new Chart($('ch-quintil'),{type:'bar',
+    data:{labels:['Q1','Q2','Q3','Q4','Q5'],
+      datasets:[{data:T.qi.map(v=>+(v/tot*100).toFixed(1)),
+        backgroundColor:['#C0392B','#E67E22','#009EDB','#8E44AD','#196B24'],borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.raw+'% del impacto'}}},
+      scales:{x:{ticks:{color:'var(--t3)'},grid:{display:false}},
+        y:{ticks:{color:'var(--t3)',callback:v=>v+'%'},grid:{color:'var(--line)'}}}}});
+}
+
+function renderChartDamage(){
+  dc('ch-damage');
+  charts['ch-damage']=new Chart($('ch-damage'),{type:'bar',
+    data:{labels:SECTORES.map(s=>s.n.split(' ')[0]),
+      datasets:[{data:SECTORES.map(s=>s.dano),
+        backgroundColor:SECTORES.map(s=>s.dano>=9?'#C0392B':s.dano>=5?'#E67E22':s.dano>=3?'#009EDB':'#196B24'),borderRadius:4}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.raw+'K/B'}}},
+      scales:{x:{ticks:{color:'var(--t3)',callback:v=>v+'K'},grid:{color:'var(--line)'}},
+        y:{ticks:{color:'var(--t3)',font:{size:9.5}},grid:{display:false}}}}});
+}
+
+function renderChartFIBar(){
+  dc('ch-fi-bar');
+  charts['ch-fi-bar']=new Chart($('ch-fi-bar'),{type:'bar',
+    data:{labels:SECTORES.map(s=>s.n.split(' ')[0]),
+      datasets:[
+        {label:'Funcionamiento',data:SECTORES.map(s=>Math.round(s.bF/(s.bF+s.bI)*100)),backgroundColor:'#0E2841',borderRadius:3},
+        {label:'Inversión',data:SECTORES.map(s=>Math.round(s.bI/(s.bF+s.bI)*100)),backgroundColor:'#009EDB',borderRadius:3},
+      ]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{color:'#3D5472',font:{size:9.5},boxWidth:9}}},
+      scales:{x:{stacked:true,ticks:{color:'var(--t3)',callback:v=>v+'%'},grid:{color:'var(--line)'}},
+        y:{stacked:true,ticks:{color:'var(--t3)',font:{size:9}},grid:{display:false}}}}});
+}
+
+function renderChartPie(T){
+  dc('ch-pie');
+  const d=SECTORES.filter(s=>calcCut(s).t>0);
+  if(!d.length){const el=$('ch-pie');if(el)el.parentElement.innerHTML='<div style="color:var(--t3);font-size:11px;padding:40px;text-align:center">Ajuste sliders</div>';return;}
+  charts['ch-pie']=new Chart($('ch-pie'),{type:'doughnut',
+    data:{labels:d.map(s=>s.n),
+      datasets:[{data:d.map(s=>+calcCut(s).t.toFixed(2)),backgroundColor:PAL.slice(0,d.length),borderWidth:2,borderColor:'#FFFFFF'}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'right',labels:{color:'#3D5472',font:{size:9},boxWidth:9,padding:6}}}}});
+}
+
+function renderChartBubble(){
+  dc('ch-bubble');
+  const data=SECTORES.map(s=>({x:calcCut(s).t,y:s.dano,r:Math.max(4,(stateF[s.id]+stateI[s.id])/2*0.5),label:s.n}));
+  charts['ch-bubble']=new Chart($('ch-bubble'),{type:'bubble',
+    data:{datasets:[{data,backgroundColor:data.map(d=>d.y>8?'rgba(192,57,43,.55)':d.y>4?'rgba(212,119,10,.55)':'rgba(25,107,36,.55)'),borderColor:'transparent'}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{const s=SECTORES[ctx.dataIndex];return[s.n,'Corte: '+fmtB(ctx.parsed.x),'Daño: '+ctx.parsed.y+'K/B'];}}}},
+      scales:{x:{title:{display:true,text:'Monto recortado ($B)',color:'var(--t3)',font:{size:9}},ticks:{color:'var(--t3)'},grid:{color:'var(--line)'}},
+        y:{title:{display:true,text:'Daño (K/B)',color:'var(--t3)',font:{size:9}},ticks:{color:'var(--t3)'},grid:{color:'var(--line)'}}}}});
+}
+
+function renderChartOpt(T){
+  dc('ch-opt');
+  const optD={pobreza:0,ipm:0,desempleo:0};
+  const srt=[...SECTORES].sort((a,b)=>a.dano-b.dano);let rem=T.totalT;
+  srt.forEach(s=>{if(rem<=0)return;const mc=s.bI*s.maxPI/100,cut=Math.min(mc,rem);Object.keys(optD).forEach(k=>{optD[k]+=(s.efx[k]||0)*cut;});rem-=cut;});
+  charts['ch-opt']=new Chart($('ch-opt'),{type:'bar',
+    data:{labels:['Δ Pobreza (pp)','Δ IPM (pp)','Δ Desempleo (pp)'],
+      datasets:[
+        {label:'Recorte actual',data:[T.d.pobreza,T.d.ipm,T.d.desempleo].map(v=>+v.toFixed(2)),backgroundColor:'#C0392B',borderRadius:4},
+        {label:'Recorte óptimo',data:[optD.pobreza,optD.ipm,optD.desempleo].map(v=>+v.toFixed(2)),backgroundColor:'#196B24',borderRadius:4},
+      ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{color:'#3D5472',font:{size:10},boxWidth:9}}},
+      scales:{x:{ticks:{color:'var(--t3)'},grid:{display:false}},
+        y:{ticks:{color:'var(--t3)',callback:v=>(v>0?'+':'')+v+'pp'},grid:{color:'var(--line)'}}}}});
+}
+
+function renderChartFrontier(){
+  dc('ch-frontier');
+  const pts=[];
+  for(let t=0;t<=META_MAX;t+=2){
+    let dp=0;const srt=[...SECTORES].sort((a,b)=>a.dano-b.dano);let rem=t;
+    srt.forEach(s=>{if(rem<=0)return;const mc=s.bI*s.maxPI/100,cut=Math.min(mc,rem);dp+=s.efx.pobreza*cut;rem-=cut;});
+    pts.push({x:t,y:+dp.toFixed(3)});
+  }
+  const T=calcTotales();
+  charts['ch-frontier']=new Chart($('ch-frontier'),{type:'line',
+    data:{datasets:[
+      {label:'Frontera eficiente',data:pts,borderColor:'#196B24',borderWidth:2,pointRadius:0,fill:false},
+      {label:'Punto actual',data:[{x:T.totalT,y:T.d.pobreza}],type:'scatter',pointRadius:8,pointBackgroundColor:'#C0392B',showLine:false},
+      {label:'Piso $21.9B',data:[{x:META_PISO,y:0}],type:'scatter',pointRadius:6,pointBackgroundColor:'#E67E22',showLine:false,pointStyle:'triangle'},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{color:'#3D5472',font:{size:9.5},boxWidth:9}}},
+      scales:{x:{title:{display:true,text:'Recorte total ($B) — rango 0 a 60B',color:'var(--t3)',font:{size:9}},min:0,max:META_MAX,ticks:{color:'var(--t3)'},grid:{color:'var(--line)'}},
+        y:{title:{display:true,text:'Δ Pobreza (pp)',color:'var(--t3)',font:{size:9}},ticks:{color:'var(--t3)',callback:v=>(v>0?'+':'')+v+'pp'},grid:{color:'var(--line)'}}}}});
+}
+
+function renderChartTraj(T){
+  dc('ch-traj');
+  const yrs=['2025','2026','2027','2028'],base=33.0,tr=-0.4;
+  const noAdj=yrs.map((_,i)=>+(base+0.35*i).toFixed(2));
+  const withAdj=yrs.map((_,i)=>+(base+tr*i+T.d.pobreza*(i>1?1:0)*0.6).toFixed(2));
+  const optD=calcOptD('pobreza');
+  const optim=yrs.map((_,i)=>+(base+tr*i+optD*(i>1?1:0)*0.55).toFixed(2));
+  const lo=withAdj.map((v,i)=>+(v-0.4*Math.sqrt(i+.5)).toFixed(2));
+  const hi=withAdj.map((v,i)=>+(v+0.4*Math.sqrt(i+.5)).toFixed(2));
+  charts['ch-traj']=new Chart($('ch-traj'),{type:'line',
+    data:{labels:yrs,datasets:[
+      {label:'IC 80%',data:hi,borderWidth:0,pointRadius:0,fill:'+1',backgroundColor:'rgba(192,57,43,.08)'},
+      {label:'IC lo',data:lo,borderWidth:0,pointRadius:0,fill:false},
+      {label:'Sin ajuste',data:noAdj,borderColor:'#9AAEC0',borderDash:[4,4],borderWidth:1.5,pointRadius:0,fill:false},
+      {label:'Ajuste actual',data:withAdj,borderColor:'#C0392B',borderWidth:2.5,pointRadius:3,pointBackgroundColor:'#C0392B',fill:false},
+      {label:'Ajuste óptimo',data:optim,borderColor:'#196B24',borderDash:[3,3],borderWidth:2,pointRadius:2,fill:false},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{color:'#3D5472',font:{size:10},boxWidth:10,filter:it=>!it.text.includes('IC lo')}}},
+      scales:{x:{ticks:{color:'var(--t3)'},grid:{color:'var(--line)'}},
+        y:{ticks:{color:'var(--t3)',callback:v=>v+'%'},grid:{color:'var(--line)'}}}}});
+}
+
+// ── SIDEBAR BUILDER ──────────────────────────────────────────
+function buildSidebar(){
+  const c=$('scontrols');c.innerHTML='';
+  SECTORES.forEach(s=>{
+    const totB=s.bF+s.bI;
+    const pctF=Math.round(s.bF/totB*100),pctI=Math.round(s.bI/totB*100);
+    const div=document.createElement('div');div.className='sec-row';
+    div.innerHTML=`
+      <div class="sec-hdr">
+        <span class="sec-name">${s.n}</span>
+        <span class="sec-cut" id="sv-${s.id}">—</span>
+      </div>
+      <div class="sec-budget">Total: ${fmtB(totB)} · <span style="color:var(--navy)">${pctF}%F</span> / <span style="color:var(--blue)">${pctI}%I</span></div>
+      <div class="fi-bars" style="margin-bottom:4px">
+        <div class="fi-f" style="width:${pctF}%"></div>
+        <div class="fi-i" style="width:${pctI}%"></div>
+      </div>
+      <!-- sidebar mini track just for visual -->
+      <div style="position:relative;height:3px;background:var(--line);border-radius:2px;margin:4px 0;overflow:hidden">
+        <div id="sb-sl-${s.id}" style="height:100%;background:var(--amber);border-radius:2px;width:0%;transition:width .3s"></div>
+      </div>
+      <div class="sec-meta">
+        <span style="color:${dColor(s.dano)}">Daño: ${s.dano}K/B · PMC: ${s.pmc}</span>
+        <span>${s.nota}</span>
+      </div>`;
+    c.appendChild(div);
+  });
+}
+
+function buildFIControls(){
+  const c=$('fi-controls');if(!c)return;
+  c.innerHTML=SECTORES.map(s=>{
+    const totB=s.bF+s.bI;
+    const pctF=Math.round(s.bF/totB*100),pctI=Math.round(s.bI/totB*100);
+    return`<div class="fi-row">
+      <div class="fi-sector">${s.n}<br><span style="font-size:8px;color:var(--t3)">Total: ${fmtB(totB)}</span></div>
+      <div class="fi-sliders">
+        <div class="fi-sl-row">
+          <span class="fi-sl-label" style="color:var(--navy)">Func. (${pctF}%)</span>
+          <input type="range" class="fi-sl-track func" id="slf-${s.id}" min="0" max="${s.maxPF}" value="0" step="0.5"
+            style="background:linear-gradient(to right,var(--navy) 0%,var(--navy) 0%,var(--line) 0%)"
+            oninput="onSliderF('${s.id}',this)">
+          <span class="fi-val navy" id="fif-v-${s.id}">$0.0B</span>
+        </div>
+        <div class="fi-sl-row">
+          <span class="fi-sl-label" style="color:var(--blue)">Inversión (${pctI}%)</span>
+          <input type="range" class="fi-sl-track inv" id="sli-${s.id}" min="0" max="${s.maxPI}" value="0" step="0.5"
+            style="background:linear-gradient(to right,var(--blue) 0%,var(--blue) 0%,var(--line) 0%)"
+            oninput="onSliderI('${s.id}',this)">
+          <span class="fi-val sky2" id="fii-v-${s.id}">$0.0B</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function onSliderF(id,input){
+  const val=parseFloat(input.value);stateF[id]=val;
+  const s=SECTORES.find(x=>x.id===id);
+  styleSlider(input,val,s.maxPF,'#0E2841');
+  syncUI();renderAll();
+}
+function onSliderI(id,input){
+  const val=parseFloat(input.value);stateI[id]=val;
+  const s=SECTORES.find(x=>x.id===id);
+  styleSlider(input,val,s.maxPI,'#009EDB');
+  syncUI();renderAll();
+}
+
+function openTab(name,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
+  $('panel-'+name).classList.add('on');
+  if(btn)btn.classList.add('on');
+  renderAll();
+}
+
+// Init
+buildSidebar();
+buildFIControls();
+renderAll();
+</script>
+</body>
+</html>
